@@ -1,0 +1,10 @@
+{
+  "description": "A polished web application that brings your design to life, giving users an intuitive way to explore its features and accomplish their goals.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
