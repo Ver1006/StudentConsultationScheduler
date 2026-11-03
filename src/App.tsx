@@ -101,7 +101,7 @@ const initialStudentRequests = [
   },
 ]
 
-function Icon({ src, className = "" }: { src: string className?: string }) {
+function Icon({ src, className = "" }: { src: string; className?: string }) {
   return <img aria-hidden="true" className={`icon ${className}`} src={src} />
 }
 
