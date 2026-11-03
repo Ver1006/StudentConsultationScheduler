@@ -5,7 +5,7 @@ type View = "login" | "home" | "requests" | "booking" | "profile"
 type RequestStatus = "Pending" | "Accepted" | "Declined" | "Finished"
 type Availability = "Available" | "Unavailable" | "In a Meeting"
 
-const A = "/public/assets"
+const A = "/assets"
 
 const icons = {
   logo: `${A}/611df.png`,
