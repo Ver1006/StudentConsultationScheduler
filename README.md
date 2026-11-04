@@ -6,7 +6,7 @@
 2. Copy `.env.example` to `.env` if you want to customize the MongoDB URI,
    database name, or API port. The defaults connect to the local MongoDB server
    and use the `student_consultation_scheduler` database.
-3. Run `pnpm install`, then `pnpm dev`.
+3. Run Terminal then use this command, `pnpm install`, then `pnpm dev`.
 4. Open the Vite URL shown in the terminal (by default, `http://localhost:8443`).
 
 The development command starts both the Vite app and a loopback-only API at
