@@ -67,6 +67,29 @@
   flex: 0 0 auto;
 }
 
+.database-notice {
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 50%;
+  max-width: calc(100vw - 32px);
+  transform: translateX(-50%);
+  border: 1px solid #f0c6c6;
+  border-radius: 10px;
+  background: #fff1f1;
+  color: #8e2525;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 4px 16px #18243a1a;
+}
+
+.database-notice.loading {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--muted);
+}
+
 .login-page {
   min-height: 100dvh;
   background: #fff;
@@ -229,6 +252,13 @@
   margin: 7px 0 0;
   color: var(--muted);
   font-size: 11px;
+  line-height: 1.4;
+}
+
+.login-error {
+  margin: 14px 0 -18px;
+  color: #a12626;
+  font-size: 13px;
   line-height: 1.4;
 }
 
