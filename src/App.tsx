@@ -1,107 +1,90 @@
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react"
 
-type Role = "student" | "instructor"
+import {
+  createConsultation,
+  getCurrentUser,
+  getAvailability,
+  getConsultations,
+  login as authenticate,
+  logout as logoutFromApi,
+  saveAvailability,
+  updateConsultation,
+  type Availability,
+  type AuthUser,
+  type Consultation,
+  type RequestStatus,
+  type Role,
+} from "./api"
+
 type View = "login" | "home" | "requests" | "booking" | "profile"
-type RequestStatus = "Pending" | "Accepted" | "Declined" | "Finished"
-type Availability = "Available" | "Unavailable" | "In a Meeting"
 
 const A = "/assets"
 
 const icons = {
   logo: `${A}/611df.png`,
+
   student: `${A}/c2f70.svg`,
+
   instructor: `${A}/4ad09.svg`,
+
   check: `${A}/7a3b8.svg`,
+
   mail: `${A}/d21d1.svg`,
+
   lock: `${A}/48eb5.svg`,
+
   eye: `${A}/8763f.svg`,
+
   arrow: `${A}/66f03.svg`,
+
   profile: `${A}/ad63f.svg`,
+
   search: `${A}/0b11b.svg`,
+
   live: `${A}/21ec1.svg`,
+
   dot: `${A}/fddc3.svg`,
+
   pin: `${A}/d36be.svg`,
+
   info: `${A}/3fef5.svg`,
+
   home: `${A}/12c8b.svg`,
+
   requests: `${A}/30c8e.svg`,
+
   profileNav: `${A}/b59c2.svg`,
+
   profileAvatar: `${A}/53289.svg`,
+
   disclosure: `${A}/0b1b9.svg`,
+
   switchThumb: `${A}/7d301.svg`,
+
   back: `${A}/9b8a8.svg`,
+
   calendar: `${A}/742fc.svg`,
+
   chevron: `${A}/8a411.svg`,
+
   clock: `${A}/8398c.svg`,
+
   edit: `${A}/9c352.svg`,
 }
 
-const initialInstructorRequests = [
-  {
-    id: 2,
-    name: "Oliver Aniate",
-    date: "Fri, Oct 16, 2026 · 2:00–2:30 PM",
-    detail: "CPE 301L · Course review · Separate example",
-    reason: "",
-    place: "Faculty / Professors Lounge · In person",
-    note: "Confirmed · Ready for your scheduled session.",
-    status: "Accepted" as RequestStatus,
-  },
-  {
-    id: 3,
-    name: "Oliver Aniate",
-    date: "Mon, Oct 19, 2026 · 9:00–9:30 AM",
-    detail: "CPE 301L · Project review",
-    reason: "",
-    place: "",
-    note: "Example · Slot unavailable. Student to reschedule.",
-    status: "Declined" as RequestStatus,
-  },
-  {
-    id: 4,
-    name: "Oliver Aniate",
-    date: "Mon, Oct 12, 2026 · 11:00–11:30 AM",
-    detail: "CPE 301L · Lab feedback · Faculty lounge",
-    reason: "",
-    place: "",
-    note: "Example · Session completed. Feedback shared.",
-    status: "Finished" as RequestStatus,
-  },
-]
-
-const initialStudentRequests = [
-  {
-    id: 2,
-    name: "Dr. Lech Walesa Navarra",
-    date: "Fri, Oct 16, 2026 · 2:00–2:30 PM",
-    detail: "Feedback and Control System · Consultation",
-    reason: "",
-    place: "Faculty / Professors Lounge · In person",
-    note: "Confirmed · Attend at the scheduled time.",
-    status: "Accepted" as RequestStatus,
-  },
-  {
-    id: 3,
-    name: "Dr. Monaliza S. Jimenez",
-    date: "Mon, Oct 19, 2026 · 9:00–9:30 AM",
-    detail: "CPE 301L · Project review",
-    reason: "",
-    place: "",
-    note: "Example · Slot unavailable. Request another time.",
-    status: "Declined" as RequestStatus,
-  },
-  {
-    id: 4,
-    name: "Dr. Monaliza S. Jimenez",
-    date: "Mon, Oct 12, 2026 · 11:00–11:30 AM",
-    detail: "CPE 301L · Lab feedback · Faculty lounge",
-    reason: "",
-    place: "",
-    note: "Example · Session completed. Feedback received.",
-    status: "Finished" as RequestStatus,
-  },
-]
-
-function Icon({ src, className = "" }: { src: string; className?: string }) {
+function Icon({
+  src,
+  className = "",
+}: {
+  src: string
+  className?: string
+}) {
   return <img aria-hidden="true" className={`icon ${className}`} src={src} />
 }
 
@@ -111,25 +94,39 @@ function Arrow() {
 
 function Login({
   role,
+
   setRole,
+
   onLogin,
 }: {
   role: Role
+
   setRole: (role: Role) => void
-  onLogin: () => void
+
+  onLogin: (role: Role, identifier: string, password: string) => Promise<void>
 }) {
   const [email, setEmail] = useState("")
+
   const [password, setPassword] = useState("")
+
   const [showPassword, setShowPassword] = useState(false)
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [loginError, setLoginError] = useState("")
+
   const identifierValid =
     role === "student"
       ? /^\d+$/.test(email)
       : /^[A-Za-z]+(?:\.[A-Za-z]+)*$/.test(email)
+
   const valid = identifierValid && password.length > 0
 
   function selectRole(nextRole: Role) {
     setRole(nextRole)
+
     setEmail("")
+    setLoginError("")
   }
 
   function updateIdentifier(value: string) {
@@ -140,9 +137,22 @@ function Login({
     )
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    if (valid) onLogin()
+
+    if (!valid || isSubmitting) return
+
+    setIsSubmitting(true)
+    setLoginError("")
+    try {
+      await onLogin(role, email, password)
+    } catch (error) {
+      setLoginError(
+        error instanceof Error ? error.message : "Sign-in failed.",
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -211,9 +221,7 @@ function Login({
               autoComplete="username"
               inputMode={role === "student" ? "numeric" : "text"}
               pattern={
-                role === "student"
-                  ? "[0-9]+"
-                  : "[A-Za-z]+(?:\\.[A-Za-z]+)*"
+                role === "student" ? "[0-9]+" : "[A-Za-z]+(?:\\.[A-Za-z]+)*"
               }
               aria-describedby="email-domain"
             />
@@ -234,6 +242,7 @@ function Login({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter Password"
+              autoComplete="current-password"
             />
             <button
               className="icon-button"
@@ -245,15 +254,21 @@ function Login({
             </button>
           </div>
 
+          {loginError && (
+            <p className="login-error" role="alert">
+              {loginError}
+            </p>
+          )}
+
           <button className="forgot" type="button">
             Forgot password?
           </button>
           <button
             className="primary login-button"
-            disabled={!valid}
+            disabled={!valid || isSubmitting}
             type="submit"
           >
-            Sign in <Arrow />
+            {isSubmitting ? "Signing in…" : "Sign in"} <Arrow />
           </button>
         </form>
 
@@ -268,11 +283,15 @@ function Login({
 
 function AppHeader({
   role,
+
   onProfile,
+
   showProfile = true,
 }: {
   role: Role
+
   onProfile: () => void
+
   showProfile?: boolean
 }) {
   return (
@@ -292,9 +311,11 @@ function AppHeader({
 
 function BottomNav({
   active,
+
   navigate,
 }: {
   active: "home" | "requests" | "profile"
+
   navigate: (view: View) => void
 }) {
   return (
@@ -329,33 +350,54 @@ function BottomNav({
 
 function StudentHome({
   navigate,
+
+  availability,
+
+  studentName,
 }: {
   navigate: (view: View) => void
+  availability: Availability
+  studentName: string
 }) {
   const [query, setQuery] = useState("")
+
   const instructors = [
     {
       initials: "MJ",
+
       name: "Dr. Monaliza S. Jimenez",
+
       department: "Logic Circuits and Design",
-      status: "Available",
+
+      status: availability,
     },
+
     {
       initials: "LN",
+
       name: "Dr. Lech Walesa Navarra",
+
       department: "Feedback and Control System",
+
       status: "Unavailable",
     },
+
     {
       initials: "MV",
+
       name: "Dr. Maria Lorena SP Villena",
+
       department: "Software Design",
+
       status: "In a Meeting",
     },
   ]
+
   const filtered = instructors.filter((item) =>
     `${item.name} ${item.department}`
+
       .toLowerCase()
+
       .includes(query.toLowerCase()),
   )
 
@@ -363,7 +405,7 @@ function StudentHome({
     <div className="app-page">
       <AppHeader role="student" onProfile={() => navigate("profile")} />
       <main className="page-content dashboard-content">
-        <h1>Hello, Oliver</h1>
+        <h1>Hello, {studentName.split(" ")[0]}</h1>
         <p className="subtitle">
           Check availability. Skip the unnecessary trip.
         </p>
@@ -381,7 +423,7 @@ function StudentHome({
           <span>{filtered.length} instructors</span>
         </div>
         <p className="live-preview">
-          <Icon src={icons.live} /> Live status preview · 9:41 AM
+          <Icon src={icons.live} /> Live status preview
         </p>
 
         <div className="instructor-list">
@@ -406,8 +448,7 @@ function StudentHome({
               {index === 0 && (
                 <>
                   <p className="location">
-                    <Icon src={icons.pin} /> Faculty / Professors Lounge ·
-                    Updated 9:40 AM
+                    <Icon src={icons.pin} /> Faculty / Professors Lounge
                   </p>
                   <button
                     className="primary book-button"
@@ -443,23 +484,31 @@ function InstructorHome({
   availability,
   setAvailability,
   requests,
+  instructorName,
 }: {
   navigate: (view: View) => void
   availability: Availability
   setAvailability: (value: Availability) => void
-  requests: typeof initialInstructorRequests
+  requests: Consultation[]
+  instructorName: string
 }) {
   const [draft, setDraft] = useState(availability)
+
+  useEffect(() => setDraft(availability), [availability])
+
   const options: Availability[] = ["Available", "Unavailable", "In a Meeting"]
+
   const pendingRequests = requests.filter(
     (request) => request.status === "Pending",
   )
+
   const newestPendingRequest = pendingRequests[0]
+
   return (
     <div className="app-page">
       <AppHeader role="instructor" onProfile={() => navigate("profile")} />
       <main className="page-content instructor-home">
-        <h1>Hello, Dr. Jimenez</h1>
+        <h1>Hello, {instructorName}</h1>
         <p className="subtitle">Keep students informed before they travel.</p>
         <section className="status-card">
           <div className="status-card-top">
@@ -471,7 +520,7 @@ function InstructorHome({
           <h2>
             <i /> {availability}
           </h2>
-          <p>Updated at 9:40 AM · Faculty / Professors Lounge</p>
+          <p>Faculty / Professors Lounge · Saved in MongoDB</p>
         </section>
 
         <h2 className="update-title">Update availability</h2>
@@ -505,9 +554,7 @@ function InstructorHome({
 
         <div className="section-heading pending-heading">
           <h2>New consultation request</h2>
-          <span>
-            {pendingRequests.length} pending
-          </span>
+          <span>{pendingRequests.length} pending</span>
         </div>
         {newestPendingRequest ? (
           <button
@@ -543,27 +590,46 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 
 function Requests({
   role,
+
   navigate,
+
   requests,
+
   onStatusChange,
+  userName,
 }: {
   role: Role
+
   navigate: (view: View) => void
-  requests: typeof initialStudentRequests
-  onStatusChange: (id: number, status: RequestStatus) => void
+
+  requests: Consultation[]
+
+  onStatusChange: (
+    id: string,
+
+    status: Exclude<RequestStatus, "Pending" | "Finished">,
+  ) => void
+  userName: string
 }) {
   const [statusFilter, setStatusFilter] = useState<RequestStatus | null>(null)
+
   const counts = useMemo(() => {
     return ["Accepted", "Declined", "Finished", "Pending"].map((status) => ({
       status,
+
       count: requests.filter((request) => request.status === status).length,
     }))
   }, [requests])
+
   const visibleRequests = statusFilter
     ? requests.filter((request) => request.status === statusFilter)
     : requests
 
-  function update(id: number, status: RequestStatus) {
+  function update(
+    id: string,
+
+    status: Exclude<RequestStatus, "Pending" | "Finished">,
+  ) {
     onStatusChange(id, status)
   }
 
@@ -573,15 +639,14 @@ function Requests({
       <main className={`page-content requests-content ${role}`}>
         <h1>Consultation requests</h1>
         <p className="subtitle">
-          {role === "student"
-            ? "Oliver Aniate · All"
-            : "Dr. Monaliza S. Jimenez ·"}{" "}
-          {requests.length} requests
+          {userName} · {requests.length} requests
         </p>
         <div className="summary-bar">
           {counts.map(({ status, count }) => {
             const typedStatus = status as RequestStatus
+
             const active = statusFilter === typedStatus
+
             return (
               <button
                 className={`${status.toLowerCase()} ${active ? "active" : ""}`}
@@ -589,7 +654,7 @@ function Requests({
                 type="button"
                 aria-pressed={active}
                 onClick={() =>
-                  setStatusFilter(active ? null : (status as RequestStatus))
+                  setStatusFilter(active ? null : status as RequestStatus)
                 }
               >
                 {status} {count}
@@ -642,11 +707,6 @@ function Requests({
             </p>
           )}
         </div>
-        {role === "student" && (
-          <p className="illustrative">
-            Declined and finished records are illustrative examples.
-          </p>
-        )}
       </main>
       <BottomNav active="requests" navigate={navigate} />
     </div>
@@ -657,21 +717,28 @@ function Profile({
   role,
   navigate,
   onLogout,
+  user,
 }: {
   role: Role
   navigate: (view: View) => void
   onLogout: () => void
+  user: AuthUser
 }) {
   const isStudent = role === "student"
+
   const [editing, setEditing] = useState(false)
+
   const [studentId, setStudentId] = useState(
-    isStudent ? "[Student ID]" : "[Faculty ID]",
+    user.studentId ?? "[Faculty ID]",
   )
-  const [email, setEmail] = useState("[Email address]")
+  const [email, setEmail] = useState(user.email)
+
   const [program, setProgram] = useState(
     isStudent ? "[Program] · [Year level]" : "Computer Engineering",
   )
+
   const [notifications, setNotifications] = useState(true)
+
   const [preference, setPreference] = useState(
     "In person · 30-minute sessions",
   )
@@ -692,7 +759,7 @@ function Profile({
             <span>{isStudent ? "OA" : "MJ"}</span>
           </div>
           <div className="profile-identity">
-            <h2>{isStudent ? "Oliver Aniate" : "Dr. Monaliza S. Jimenez"}</h2>
+            <h2>{user.name}</h2>
             <p>{isStudent ? "Student" : "Instructor"}</p>
           </div>
         </section>
@@ -797,39 +864,69 @@ function Profile({
 
 function Booking({
   onBack,
+
   onSubmit,
+
+  availability,
 }: {
   onBack: () => void
+
   onSubmit: (date: string, start: string, end: string, reason: string) => void
+
+  availability: Availability
 }) {
   const currentLocalDate = () => {
     const now = new Date()
+
     return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+
       .toISOString()
+
       .split("T")[0]
   }
+
   const [date, setDate] = useState(currentLocalDate)
+
   const [start, setStart] = useState("")
+
   const [end, setEnd] = useState("")
+
   const [reason, setReason] = useState("Project guidance")
+
   const [editingReason, setEditingReason] = useState(false)
+
   const times = Array.from({ length: 19 }, (_, index) => {
     const totalMinutes = 8 * 60 + index * 30
+
     const hour = Math.floor(totalMinutes / 60)
+
     const minutes = totalMinutes % 60
+
     const period = hour >= 12 ? "PM" : "AM"
+
     const displayHour = hour > 12 ? hour - 12 : hour
+
     return `${displayHour}:${minutes.toString().padStart(2, "0")} ${period}`
   })
+
   const formattedDate = date
     ? new Intl.DateTimeFormat("en-US", {
         weekday: "short",
+
         month: "short",
+
         day: "numeric",
+
         year: "numeric",
+
         timeZone: "UTC",
       }).format(new Date(`${date}T00:00:00Z`))
     : "Select a date"
+
+  const startTimeIndex = times.indexOf(start)
+
+  const endTimeIndex = times.indexOf(end)
+
   return (
     <div className="app-page booking-page">
       <header className="booking-header">
@@ -850,9 +947,13 @@ function Booking({
             <h3>Dr. Monaliza S. Jimenez</h3>
             <p>Logic Circuits and Design</p>
           </div>
-          <span className="availability available">
-            <Icon src={icons.dot} />
-            Available
+          <span
+            className={`availability ${
+              availability === "Available" ? "available" : ""
+            }`}
+          >
+            {availability === "Available" && <Icon src={icons.dot} />}
+            {availability}
           </span>
           <p className="location">
             <Icon src={icons.pin} />
@@ -873,7 +974,14 @@ function Booking({
         <div className="time-grid">
           <label>
             <span>Start time</span>
-            <select value={start} onChange={(e) => setStart(e.target.value)}>
+            <select
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value)
+
+                setEnd("")
+              }}
+            >
               <option value="" disabled>
                 Pick time
               </option>
@@ -934,8 +1042,14 @@ function Booking({
         </section>
         <button
           className="primary submit-request"
-          onClick={() => onSubmit(formattedDate, start, end, reason)}
-          disabled={!date || !start || !end || !reason.trim()}
+          onClick={() => onSubmit(date, start, end, reason)}
+          disabled={
+            !date ||
+            !start ||
+            !end ||
+            !reason.trim() ||
+            endTimeIndex !== startTimeIndex + 1
+          }
           type="button"
         >
           Submit consultation request <Arrow />
@@ -951,110 +1065,263 @@ function Booking({
 
 export default function App() {
   const [role, setRole] = useState<Role>("student")
+
   const [view, setView] = useState<View>("login")
-  const [availability, setAvailability] = useState<Availability>("Available")
-  const [studentRequests, setStudentRequests] = useState(initialStudentRequests)
-  const [instructorRequests, setInstructorRequests] = useState(
-    initialInstructorRequests,
+
+  const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(
+    null,
   )
 
+  const [availability, setAvailability] = useState<Availability>("Available")
+
+  const [studentRequests, setStudentRequests] = useState<Consultation[]>([])
+
+  const [instructorRequests, setInstructorRequests] = useState<Consultation[]>(
+    [],
+  )
+
+  const [databaseError, setDatabaseError] = useState("")
+
+  const [isLoading, setIsLoading] = useState(true)
+
   useEffect(() => {
-    setStudentRequests((requests) =>
-      requests.filter((request) => request.status !== "Pending"),
-    )
-    setInstructorRequests((requests) =>
-      requests.filter((request) => request.status !== "Pending"),
-    )
+    let cancelled = false
+
+    async function restoreSession() {
+      try {
+        const user = await getCurrentUser()
+        if (cancelled) return
+
+        if (user) {
+          setAuthenticatedUser(user)
+          setRole(user.role)
+          setView("home")
+        } else {
+          setIsLoading(false)
+        }
+      } catch (error) {
+        if (cancelled) return
+
+        setDatabaseError(
+          error instanceof Error
+            ? `Could not connect to the local sign-in service: ${error.message}`
+            : "Could not connect to the local sign-in service.",
+        )
+        setIsLoading(false)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void restoreSession()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  function logout() {
-    setView("login")
+  useEffect(() => {
+    const user = authenticatedUser
+    if (user === null) return
+    let cancelled = false
+
+    async function loadAccountData(user: AuthUser) {
+      setIsLoading(true)
+      try {
+        const [consultations, savedAvailability] = await Promise.all([
+          getConsultations(),
+          getAvailability(),
+        ])
+        if (cancelled) return
+        setStudentRequests(
+          user.role === "student" ? consultations : [],
+        )
+        setInstructorRequests(
+          user.role === "instructor" ? consultations : [],
+        )
+        setAvailability(savedAvailability.status)
+        setDatabaseError("")
+      } catch (error) {
+        if (cancelled) return
+        setDatabaseError(
+          error instanceof Error
+            ? `Could not load your MongoDB data: ${error.message}`
+            : "Could not load your MongoDB data.",
+        )
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void loadAccountData(user)
+    return () => {
+      cancelled = true
+    }
+  }, [authenticatedUser])
+
+  async function handleLogin(
+    selectedRole: Role,
+    identifier: string,
+    password: string,
+  ) {
+    const user = await authenticate(selectedRole, identifier, password)
+    setAuthenticatedUser(user)
+    setRole(user.role)
+    setDatabaseError("")
+    setView("home")
   }
 
-  function submitBooking(
+  async function logout() {
+    try {
+      await logoutFromApi()
+      setAuthenticatedUser(null)
+      setStudentRequests([])
+      setInstructorRequests([])
+      setView("login")
+      setDatabaseError("")
+    } catch (error) {
+      setDatabaseError(
+        error instanceof Error ? error.message : "Could not sign out.",
+      )
+    }
+  }
+
+  async function submitBooking(
     date: string,
+
     start: string,
+
     end: string,
+
     reason: string,
   ) {
-    const requestId = Date.now()
-    const studentRequest = {
-      id: requestId,
-      name: "Dr. Monaliza S. Jimenez",
-      date: `${date} · ${start.replace(" AM", "")}–${end}`,
-      detail: "CPE 301L · Logic Circuits and Design",
-      reason: reason.trim(),
-      place: "Faculty / Professors Lounge · In person",
-      note: "Awaiting confirmation · Wait before visiting.",
-      status: "Pending" as RequestStatus,
+    try {
+      const created = await createConsultation(date, start, end, reason)
+
+      setStudentRequests((requests) => [created.student, ...requests])
+
+      setInstructorRequests((requests) => [created.instructor, ...requests])
+
+      setDatabaseError("")
+
+      setView("requests")
+    } catch (error) {
+      setDatabaseError(
+        error instanceof Error ? error.message : "Could not save the request.",
+      )
     }
-    const instructorRequest = {
-      ...studentRequest,
-      name: "Oliver Aniate",
-      note: "",
-    }
-    setStudentRequests((requests) => [studentRequest, ...requests])
-    setInstructorRequests((requests) => [instructorRequest, ...requests])
-    setView("requests")
   }
 
-  function updateConsultationStatus(id: number, status: RequestStatus) {
-    setInstructorRequests((requests) =>
-      requests.map((request) =>
-        request.id === id
-          ? {
-              ...request,
-              status,
-              note:
-                status === "Accepted"
-                  ? "Confirmed · Ready for your scheduled session."
-                  : "Declined · Student should request another time.",
-            }
-          : request,
-      ),
-    )
-    setStudentRequests((requests) =>
-      requests.map((request) =>
-        request.id === id
-          ? {
-              ...request,
-              status,
-              note:
-                status === "Accepted"
-                  ? "Confirmed · Attend at the scheduled time."
-                  : "Declined · Request another consultation time.",
-            }
-          : request,
-      ),
-    )
+  async function updateConsultationStatus(
+    id: string,
+
+    status: Exclude<RequestStatus, "Pending" | "Finished">,
+  ) {
+    try {
+      const updated = await updateConsultation(id, status)
+
+      setStudentRequests((requests) =>
+        requests.map((request) =>
+          request.id === id ? updated.student : request,
+        ),
+      )
+
+      setInstructorRequests((requests) =>
+        requests.map((request) =>
+          request.id === id ? updated.instructor : request,
+        ),
+      )
+
+      setDatabaseError("")
+    } catch (error) {
+      setDatabaseError(
+        error instanceof Error
+          ? error.message
+          : "Could not update the consultation.",
+      )
+    }
   }
 
-  if (view === "login")
-    return (
-      <Login role={role} setRole={setRole} onLogin={() => setView("home")} />
+  async function updateAvailability(value: Availability) {
+    try {
+      const saved = await saveAvailability(value)
+
+      setAvailability(saved.status)
+
+      setDatabaseError("")
+    } catch (error) {
+      setDatabaseError(
+        error instanceof Error
+          ? error.message
+          : "Could not save instructor availability.",
+      )
+    }
+  }
+
+  let page: ReactNode
+
+  if (view === "login") {
+    page = (
+      <Login role={role} setRole={setRole} onLogin={handleLogin} />
     )
-  if (view === "booking")
-    return <Booking onBack={() => setView("home")} onSubmit={submitBooking} />
-  if (view === "profile")
-    return <Profile role={role} navigate={setView} onLogout={logout} />
-  if (view === "requests") {
-    return (
+  } else if (view === "booking") {
+    page = (
+      <Booking
+        onBack={() => setView("home")}
+        onSubmit={submitBooking}
+        availability={availability}
+      />
+    )
+  } else if (view === "profile") {
+    page = authenticatedUser ? (
+      <Profile
+        role={role}
+        navigate={setView}
+        onLogout={logout}
+        user={authenticatedUser}
+      />
+    ) : null
+  } else if (view === "requests") {
+    page = (
       <Requests
         role={role}
         navigate={setView}
         requests={role === "student" ? studentRequests : instructorRequests}
         onStatusChange={updateConsultationStatus}
+        userName={authenticatedUser?.name ?? ""}
+      />
+    )
+  } else if (role === "student") {
+    page = (
+      <StudentHome
+        navigate={setView}
+        availability={availability}
+        studentName={authenticatedUser?.name ?? ""}
+      />
+    )
+  } else {
+    page = (
+      <InstructorHome
+        navigate={setView}
+        availability={availability}
+        setAvailability={updateAvailability}
+        requests={instructorRequests}
+        instructorName={authenticatedUser?.name ?? ""}
       />
     )
   }
-  if (role === "student")
-    return <StudentHome navigate={setView} />
+
   return (
-    <InstructorHome
-      navigate={setView}
-      availability={availability}
-      setAvailability={setAvailability}
-      requests={instructorRequests}
-    />
+    <>
+      {(isLoading || databaseError) && (
+        <div
+          className={`database-notice ${isLoading ? "loading" : ""}`}
+          role={databaseError ? "alert" : "status"}
+        >
+          {isLoading ? "Connecting to local MongoDB…" : databaseError}
+        </div>
+      )}
+      {page}
+    </>
   )
 }
