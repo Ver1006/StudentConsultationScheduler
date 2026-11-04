@@ -18,3 +18,34 @@ availability are stored in MongoDB. Sign-in checks the seeded users in the
 `users` collection and uses an HTTP-only local session cookie. This is a local
 development demo, not production authentication; do not expose the API to a
 network or use it with real student data.
+
+Here is the account credentials needed:
+
+Student:
+Name: Oliver Aniate
+Student ID: 9342832738
+Email: 9342832738@ms.bulsu.edu.ph
+Password: ANIATE9342832738
+
+Name: Precious Abby De Castro
+Student ID: 4944405311
+Email: 4944405311@ms.bulsu.edu.ph
+Password: DECASTRO4944405311
+
+Name: Jonathan Espiritu
+Student ID: 9942988820
+Email: 9942988820@ms.bulsu.edu.ph
+Password: ESPIRITU9942988820
+
+Instructor:
+Name: Dr. Monaliza Jimenez
+Email: monalizajimenez@ms.bulsu.edu.ph
+Password: jimenez123
+
+Name: Dr. Lech Walesa Navarra
+Email: lechwalesanavarra @ms.bulsu.edu.ph
+Password: navarra123
+
+Name: Dr. Maria Lorena SP Villena
+Email: marialorenavillena @ms.bulsu.edu.ph
+Password: villena123
